@@ -1,9 +1,13 @@
-name: sb-wiki
+name: docker-push
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+
+permissions:
+  packages: write
+  contents: read
 
 jobs:
   build:
