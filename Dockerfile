@@ -1,16 +1,17 @@
-FROM alpine:3.19 AS builder
+FROM alpine:3.21 AS builder
 ENV RAWDNS_VERSION=1.10
-WORKDIR /tmp/etc/rawdns
+WORKDIR /tmp/
 RUN \
   apk add --no-cache \
     dpkg \
     wget && \
   dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" && \
-  wget -O /tmp/etc/rawdns/rawdns https://github.com/tianon/rawdns/releases/download/$RAWDNS_VERSION/rawdns-$dpkgArch
+  mkdir -p /tmp/usr/local/bin && \
+  wget -O /tmp/usr/local/bin/rawdns https://github.com/tianon/rawdns/releases/download/$RAWDNS_VERSION/rawdns-$dpkgArch && \
+  chmod +x /tmp/usr/local/bin/rawdns
 ADD https://raw.githubusercontent.com/tianon/rawdns/refs/heads/master/example-config.json /tmp/etc/rawdns/example-config.json
-RUN chmod +x /tmp/etc/rawdns/rawdns
 
 FROM scratch AS final
 WORKDIR /etc/rawdns
-COPY --from=builder /tmp/etc/rawdns /etc/rawdns
-CMD ["/etc/rawdns/rawdns"]
+COPY --from=builder /tmp/ /
+CMD ["rawdns"]
