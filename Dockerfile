@@ -1,17 +1,12 @@
-FROM alpine:3.21 AS builder
-ENV RAWDNS_VERSION=1.10
-WORKDIR /tmp/
-RUN \
-  apk add --no-cache \
-    dpkg \
-    wget && \
-  dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')" && \
-  mkdir -p /tmp/usr/local/bin && \
-  wget -O /tmp/usr/local/bin/rawdns https://github.com/tianon/rawdns/releases/download/$RAWDNS_VERSION/rawdns-$dpkgArch && \
-  chmod +x /tmp/usr/local/bin/rawdns
-ADD https://raw.githubusercontent.com/tianon/rawdns/refs/heads/master/example-config.json /tmp/etc/rawdns/example-config.json
+FROM golang:1.25-alpine AS builder
+ADD https://github.com/tianon/rawdns.git /usr/local/src/rawdns
+WORKDIR /usr/local/src/rawdns
+ENV CGO_ENABLED=0
+RUN go mod download
+RUN go build -o /tmp/rawdns -trimpath -o /output/usr/bin/rawdns ./cmd/rawdns
+ADD https://raw.githubusercontent.com/tianon/rawdns/refs/heads/master/example-config.json /output/etc/rawdns/example-config.json
 
 FROM scratch AS final
 WORKDIR /etc/rawdns
-COPY --from=builder /tmp/ /
+COPY --from=builder /output/ /
 CMD ["rawdns"]
